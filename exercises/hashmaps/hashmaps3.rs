@@ -14,7 +14,6 @@
 // Execute `rustlings hint hashmaps3` or use the `hint` watch subcommand for a
 // hint.
 
-// I AM NOT DONE
 
 use std::collections::HashMap;
 
@@ -27,8 +26,10 @@ struct Team {
 fn build_scores_table(results: String) -> HashMap<String, Team> {
     // The name of the team is the key and its associated struct is the value.
     let mut scores: HashMap<String, Team> = HashMap::new();
-
+    // 从用逗号和换行符组成的 字符串 构造 HashMap
+    // for循环是每次处理一行，也就是处理换行符
     for r in results.lines() {
+        // split处理逗号
         let v: Vec<&str> = r.split(',').collect();
         let team_1_name = v[0].to_string();
         let team_1_score: u8 = v[2].parse().unwrap();
@@ -39,7 +40,27 @@ fn build_scores_table(results: String) -> HashMap<String, Team> {
         // will be the number of goals conceded from team_2, and similarly
         // goals scored by team_2 will be the number of goals conceded by
         // team_1.
+        // 通过上述情况就可以知道是,现在要补充的是,将两个队伍及其比分情况放到HahsMap中
+        // 而这个小操作在hashmaps2的更新考查中已经用过了 basket.entry(fruit).or_insert(1);
+         // Update the team 1 score
+        let team_1 = scores.entry(team_1_name).or_insert(
+            Team {
+                goals_scored: 0,
+                goals_conceded: 0,
+            }
+        );
+        team_1.goals_scored += team_1_score;
+        team_1.goals_conceded += team_2_score;
+
+        // Update the team 2 score
+        let team_2 = scores.entry(team_2_name.clone()).or_insert(Team {
+            goals_scored: 0,
+            goals_conceded: 0,
+        });
+        team_2.goals_scored += team_2_score;
+        team_2.goals_conceded += team_1_score;
     }
+
     scores
 }
 
@@ -84,3 +105,4 @@ mod tests {
         assert_eq!(team.goals_conceded, 2);
     }
 }
+

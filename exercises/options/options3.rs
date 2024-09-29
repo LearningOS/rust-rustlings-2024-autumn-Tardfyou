@@ -3,19 +3,27 @@
 // Execute `rustlings hint options3` or use the `hint` watch subcommand for a
 // hint.
 
-// I AM NOT DONE
 
-struct Point {
-    x: i32,
-    y: i32,
+enum MyEnum {
+    SomeValue(String),
+    AnotherValue(u32),
 }
 
 fn main() {
-    let y: Option<Point> = Some(Point { x: 100, y: 200 });
+    let my_var = MyEnum::SomeValue(String::from("Hello, Rust"));
 
-    match y {
-        Some(p) => println!("Co-ordinates are {},{} ", p.x, p.y),
-        _ => panic!("no match!"),
+    match my_var {
+        MyEnum::SomeValue(s) => {
+            println!("Got ownership of string: {}", s);
+            // 在此分支中，我们获取了字符串的所有权，可以自由地使用它
+        }
+        MyEnum::AnotherValue(n) => {
+            println!("Got ownership of u32: {}", n);
+            // 在此分支中，我们获取了 u32 的所有权，可以自由地使用它
+        }
     }
-    y; // Fix without deleting this line.
+
+    // 注意，在 `match` 表达式之后，`my_var` 的所有权并未返回，因为在所有可能的分支中都已经被取走。
 }
+
+
