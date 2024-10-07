@@ -1,87 +1,165 @@
-/*
-	bfs
-	This problem requires you to implement a basic BFS algorithm
-*/
+use std::fmt::{self, Display, Formatter};
+use std::ptr::NonNull;
+use std::vec::*;
 
-//I AM NOT DONE
-use std::collections::VecDeque;
-
-// Define a graph
-struct Graph {
-    adj: Vec<Vec<usize>>, 
+#[derive(Debug)]
+struct Node<T> {
+    val: T,
+    next: Option<NonNull<Node<T>>>,
+    prev: Option<NonNull<Node<T>>>,
 }
 
-impl Graph {
-    // Create a new graph with n vertices
-    fn new(n: usize) -> Self {
-        Graph {
-            adj: vec![vec![]; n],
+impl<T> Node<T> {
+    fn new(t: T) -> Node<T> {
+        Node {
+            val: t,
+            prev: None,
+            next: None,
+        }
+    }
+}
+#[derive(Debug)]
+struct LinkedList<T> {
+    length: u32,
+    start: Option<NonNull<Node<T>>>,
+    end: Option<NonNull<Node<T>>>,
+}
+
+impl<T> Default for LinkedList<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T> LinkedList<T> {
+    pub fn new() -> Self {
+        Self {
+            length: 0,
+            start: None,
+            end: None,
         }
     }
 
-    // Add an edge to the graph
-    fn add_edge(&mut self, src: usize, dest: usize) {
-        self.adj[src].push(dest); 
-        self.adj[dest].push(src); 
+    pub fn add(&mut self, obj: T) {
+        let mut node = Box::new(Node::new(obj));
+        node.next = None;
+        node.prev = self.end;
+        let node_ptr = Some(unsafe { NonNull::new_unchecked(Box::into_raw(node)) });
+        match self.end {
+            None => self.start = node_ptr,
+            Some(end_ptr) => unsafe { (*end_ptr.as_ptr()).next = node_ptr },
+        }
+        self.end = node_ptr;
+        self.length += 1;
     }
 
-    // Perform a breadth-first search on the graph, return the order of visited nodes
-    fn bfs_with_return(&self, start: usize) -> Vec<usize> {
-        
-		//TODO
+    pub fn get(&mut self, index: i32) -> Option<&T> {
+        self.get_ith_node(self.start, index)
+    }
 
-        let mut visit_order = vec![];
-        visit_order
+    fn get_ith_node(&mut self, node: Option<NonNull<Node<T>>>, index: i32) -> Option<&T> {
+        match node {
+            None => None,
+            Some(next_ptr) => match index {
+                0 => Some(unsafe { &(*next_ptr.as_ptr()).val }),
+                _ => self.get_ith_node(unsafe { (*next_ptr.as_ptr()).next }, index - 1),
+            },
+        }
+    }
+	pub fn reverse(&mut self){
+		// TODO
+        let mut current = self.start;
+        while let Some(mut current_node) = current {
+            // 交换当前节点的 next 和 prev
+            unsafe {
+                let mut node = current_node.as_mut();
+                std::mem::swap(&mut node.prev, &mut node.next);
+            }
+            // 移动到原来的 prev 节点，现在是 next
+            current = unsafe { current_node.as_ref().prev };
+        }
+        // 交换链表的 start 和 end
+        std::mem::swap(&mut self.start, &mut self.end);
+	}
+}
+
+impl<T> Display for LinkedList<T>
+where
+    T: Display,
+{
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self.start {
+            Some(node) => write!(f, "{}", unsafe { node.as_ref() }),
+            None => Ok(()),
+        }
     }
 }
 
+impl<T> Display for Node<T>
+where
+    T: Display,
+{
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self.next {
+            Some(node) => write!(f, "{}, {}", self.val, unsafe { node.as_ref() }),
+            None => write!(f, "{}", self.val),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::LinkedList;
 
     #[test]
-    fn test_bfs_all_nodes_visited() {
-        let mut graph = Graph::new(5);
-        graph.add_edge(0, 1);
-        graph.add_edge(0, 4);
-        graph.add_edge(1, 2);
-        graph.add_edge(1, 3);
-        graph.add_edge(1, 4);
-        graph.add_edge(2, 3);
-        graph.add_edge(3, 4);
-
-        let visited_order = graph.bfs_with_return(0);
-        assert_eq!(visited_order, vec![0, 1, 4, 2, 3]);
+    fn create_numeric_list() {
+        let mut list = LinkedList::<i32>::new();
+        list.add(1);
+        list.add(2);
+        list.add(3);
+        println!("Linked List is {}", list);
+        assert_eq!(3, list.length);
     }
 
     #[test]
-    fn test_bfs_different_start() {
-        let mut graph = Graph::new(3);
-        graph.add_edge(0, 1);
-        graph.add_edge(1, 2);
-
-        let visited_order = graph.bfs_with_return(2);
-        assert_eq!(visited_order, vec![2, 1, 0]);
+    fn create_string_list() {
+        let mut list_str = LinkedList::<String>::new();
+        list_str.add("A".to_string());
+        list_str.add("B".to_string());
+        list_str.add("C".to_string());
+        println!("Linked List is {}", list_str);
+        assert_eq!(3, list_str.length);
     }
 
     #[test]
-    fn test_bfs_with_cycle() {
-        let mut graph = Graph::new(3);
-        graph.add_edge(0, 1);
-        graph.add_edge(1, 2);
-        graph.add_edge(2, 0);
+    fn test_reverse_linked_list_1() {
+		let mut list = LinkedList::<i32>::new();
+		let original_vec = vec![2,3,5,11,9,7];
+		let reverse_vec = vec![7,9,11,5,3,2];
+		for i in 0..original_vec.len(){
+			list.add(original_vec[i]);
+		}
+		println!("Linked List is {}", list);
+		list.reverse();
+		println!("Reversed Linked List is {}", list);
+		for i in 0..original_vec.len(){
+			assert_eq!(reverse_vec[i],*list.get(i as i32).unwrap());
+		}
+	}
 
-        let visited_order = graph.bfs_with_return(0);
-        assert_eq!(visited_order, vec![0, 1, 2]);
-    }
-
-    #[test]
-    fn test_bfs_single_node() {
-        let mut graph = Graph::new(1);
-
-        let visited_order = graph.bfs_with_return(0);
-        assert_eq!(visited_order, vec![0]);
-    }
+	#[test]
+	fn test_reverse_linked_list_2() {
+		let mut list = LinkedList::<i32>::new();
+		let original_vec = vec![34,56,78,25,90,10,19,34,21,45];
+		let reverse_vec = vec![45,21,34,19,10,90,25,78,56,34];
+		for i in 0..original_vec.len(){
+			list.add(original_vec[i]);
+		}
+		println!("Linked List is {}", list);
+		list.reverse();
+		println!("Reversed Linked List is {}", list);
+		for i in 0..original_vec.len(){
+			assert_eq!(reverse_vec[i],*list.get(i as i32).unwrap());
+		}
+	}
 }
-
